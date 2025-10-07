@@ -4,7 +4,7 @@
 
 [![Rust](https://img.shields.io/badge/rust-1.90%2B-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](https://github.com/yourusername/deysis-tui/releases)
+[![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](https://github.com/umceko/deysis-tui/releases)
 
 ## ✨ Features
 
@@ -35,6 +35,7 @@ cargo run --release
 3. **Enter Code** - Type 6-digit attendance code
 4. **Auto-submit** - Location randomized and sent
 5. **Confirmation** - Instant success/failure feedback
+
 
 **Privacy Note**: Your location is randomized within a 10-15 meter radius of the faculty. The system shows school coordinates while ensuring you're actually present on premises.
 

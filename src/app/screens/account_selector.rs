@@ -213,7 +213,7 @@ impl Screen for AccountSelectorScreen {
         self.render_account_list(frame, h_chunks[1]);
 
         // Footer instructions
-        let footer = Paragraph::new(" ↑↓ Seç | Enter: Giriş Yap | Esc: Çıkış | n: Yeni hesap ekle")
+        let footer = Paragraph::new(" ↑↓ Seç | Enter: Giriş Yap | Esc: Çıkış | n: Yeni hesap ekle | d: Hesap sil")
             .style(Style::default()
                 .fg(Color::DarkGray)
                 .add_modifier(Modifier::ITALIC));

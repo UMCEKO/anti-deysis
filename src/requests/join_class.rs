@@ -2,21 +2,14 @@ use reqwest::Client;
 use serde_json::json;
 use std::error::Error;
 
-pub async fn join_class(client: &Client, code: String) -> Result<bool, Box<dyn Error>> {
-    let lat: f64 = 38.366966;
-    let lon: f64 = 27.202704;
-    // Add random noise to the coordinates 0.000001 to 0.000009
-    let noise_lat: f64 = (rand::random::<u32>() % 9 + 1) as f64 * 0.000001;
-    let noise_lon: f64 = (rand::random::<u32>() % 9 + 1) as f64 * 0.000001;
-    let lat = lat + noise_lat;
-    let lon = lon + noise_lon;
-    let coordinates = format!("{},{}", lat, lon);
+pub async fn join_class(client: &Client, code: String, coordinates: (f64, f64)) -> Result<bool, Box<dyn Error>> {
+    let coord_str = format!("{},{}", coordinates.0, coordinates.1);
     let response = client
         .post("https://deysis.deu.edu.tr/api/Ogrenci/YoklamaKatil")
         .json(&json!({
             "GIRIS_TIPI": "K",
             "KOD": code,
-            "KONUM": coordinates
+            "KONUM": coord_str
         }))
         .send()
         .await?;

@@ -8,7 +8,9 @@ use ratatui::layout::{Alignment, Constraint, Direction, Layout};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::widgets::{Block, BorderType, Borders, List, ListItem, Paragraph};
 use ratatui::Frame;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
+use crate::app::screens::account_selector::AccountSelectorScreen;
+use crate::utils::config::Config;
 
 pub struct HomeScreen {
     pub selection: HomeScreenSelection,
@@ -26,6 +28,7 @@ impl Default for HomeScreen {
 
 pub enum HomeScreenSelection {
     EnterCode,
+    AccountSelector
 }
 
 #[async_trait]
@@ -44,10 +47,34 @@ impl Screen for HomeScreen {
                                     enter_code::EnterCodeScreen::new()
                                 ))
                             }
+                            HomeScreenSelection::AccountSelector => {
+                                let config = Arc::new(Mutex::new(Config::load_from_file()));
+                                let accounts = config.lock().unwrap().clone().users.into_iter().map(|(_, v)| {v}).collect();
+                                crate::app::screens::ScreenAction::ChangeScreen(crate::app::screen(
+                                    AccountSelectorScreen {
+                                        accounts,
+                                        selected_account_idx: 0
+                                    }
+                                ))
+                            }
                         }
                     }
                     KeyCode::Esc | KeyCode::Char('q') => {
                         crate::app::screens::ScreenAction::ExitApp
+                    }
+                    KeyCode::Up => {
+                        self.selection = match self.selection {
+                            HomeScreenSelection::EnterCode => HomeScreenSelection::AccountSelector,
+                            HomeScreenSelection::AccountSelector => HomeScreenSelection::EnterCode,
+                        };
+                        crate::app::screens::ScreenAction::None
+                    }
+                    KeyCode::Down => {
+                        self.selection = match self.selection {
+                            HomeScreenSelection::EnterCode => HomeScreenSelection::AccountSelector,
+                            HomeScreenSelection::AccountSelector => HomeScreenSelection::EnterCode,
+                        };
+                        crate::app::screens::ScreenAction::None
                     }
                     _ => {
                         // Ignore other events
@@ -140,6 +167,7 @@ impl HomeScreen {
     fn render_menu(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
         let menu_items = vec![
             ("📝 Kod Gir", HomeScreenSelection::EnterCode),
+            ("👤 Hesap Seç", HomeScreenSelection::AccountSelector),
         ];
 
         let items: Vec<ListItem> = menu_items

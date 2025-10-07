@@ -7,15 +7,18 @@ use ratatui::layout::{Alignment, Constraint, Direction, Layout};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::widgets::{Block, BorderType, Borders, Paragraph};
 use ratatui::Frame;
+use crate::requests::gen_coords::gen_coords;
 
 pub struct EnterCodeScreen {
     code: String,
+    current_location: (f64, f64)
 }
 
 impl EnterCodeScreen {
     pub fn new() -> Self {
         Self {
             code: String::new(),
+            current_location: gen_coords()
         }
     }
 }
@@ -55,10 +58,11 @@ impl crate::app::screens::Screen for EnterCodeScreen {
                         let code = self.code.clone();
                         let http_client = app.http_client.clone();
                         let user_details = app.user_details.clone().unwrap();
+                        let coords = self.current_location.clone();
                         ScreenAction::ChangeScreenAsync {
                             message: "Submitting code...".into(),
                             future: Box::pin(async move {
-                                let result = join_class(&http_client, code).await;
+                                let result = join_class(&http_client, code, coords).await;
                                 match result {
                                     Ok(true) => screen(
                                         PromptScreen {
@@ -165,13 +169,27 @@ impl crate::app::screens::Screen for EnterCodeScreen {
             .alignment(Alignment::Center);
         frame.render_widget(progress, chunks[3]);
 
+        // Coords
+        let progress_text = format!("Lat: {} - Lon: {}", self.current_location.0, self.current_location.1);
+        let progress_color = if self.code.len() == 6 {
+            Color::Green
+        } else {
+            Color::Yellow
+        };
+
+        let progress = Paragraph::new(progress_text)
+            .style(Style::default().fg(progress_color))
+            .alignment(Alignment::Center);
+        frame.render_widget(progress, chunks[4]);
+
         // Footer
         let footer = Paragraph::new("Enter: Gönder | Backspace: Sil | Esc: Geri")
             .style(Style::default()
                 .fg(Color::DarkGray)
                 .add_modifier(Modifier::ITALIC))
             .alignment(Alignment::Center);
-        frame.render_widget(footer, chunks[4]);
+        frame.render_widget(footer, chunks[5]);
+
     }
 
 

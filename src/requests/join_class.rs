@@ -1,14 +1,6 @@
-use log::debug;
 use reqwest::Client;
-use serde::{Deserialize, Serialize};
 use std::error::Error;
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct JoinClassRequest {
-    pub giris_tipi: String,
-    pub kod: String,
-    pub konum: String,
-}
+use serde_json::json;
 
 pub async fn join_class(client: &Client, code: String) -> Result<bool, Box<dyn Error>> {
     let lat: f64 = 38.366966;
@@ -19,22 +11,32 @@ pub async fn join_class(client: &Client, code: String) -> Result<bool, Box<dyn E
     let lat = lat + noise_lat;
     let lon = lon + noise_lon;
     let coordinates = format!("{},{}", lat, lon);
-    let req_body = JoinClassRequest {
-        kod: code,
-        giris_tipi: "K".to_string(),
-        konum: coordinates.to_string()
-    };
-    debug!("Join class request body: {:?}", req_body);
     let response = client
         .post("https://deysis.deu.edu.tr/api/Ogrenci/YoklamaKatil")
-        .json(&req_body)
+        .json(&json!({
+            "GIRIS_TIPI": "K",
+            "KOD": code,
+            "KONUM": coordinates
+        }))
         .send()
         .await?;
 
+    #[derive(serde::Deserialize)]
+    struct Response {
+        pub message: String,
+    }
     if response.status().is_success() {
         Ok(true)
     }
     else {
-        Err(format!("Request failed with status: {}", response.status()).into())
+        let resp_json: Response = response.json().await?;
+        match resp_json.message.as_str() {
+            "Yoklama bulunamadı" => {
+                Err("Yoklama bulunamadı, kodu kontrol edin.".into())
+            }
+            _ => {
+                Err(format!("Bir hata ile karşılaşıldı: {}", resp_json.message).into())
+            }
+        }
     }
 }

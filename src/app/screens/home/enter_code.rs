@@ -99,7 +99,7 @@ impl crate::app::screens::Screen for EnterCodeScreen {
                                         selection: crate::app::screens::prompt::Selection::Yes,
                                         header: "Hata!".into(),
                                         title: "Yoklamaya katılamadınız.".into(),
-                                        prompt: format!("Bir hata oluştu: {}, tekrar denemek ister misiniz?", e),
+                                        prompt: format!("Bir hata oluştu: {}. Tekrar denemek ister misiniz?", e),
                                         yes_label: "Evet".into(),
                                         no_label: "Hayır".into(),
                                         yes_action: Box::new(|| {

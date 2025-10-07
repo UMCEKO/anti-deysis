@@ -3,7 +3,7 @@ use crate::app::screens::loading::GenericLoadingScreen;
 use crate::app::screens::ScreenAction;
 use crate::app::{screen, App};
 use crossterm::event;
-use crossterm::event::poll;
+use crossterm::event::{poll, Event, KeyEventKind};
 use std::time::Duration;
 
 impl App {
@@ -16,6 +16,18 @@ impl App {
                 Ok(true) => Some(event::read()?),
                 Ok(false) => None,
                 Err(_) => break,
+            };
+            let event = match event {
+                Some(Event::Key(key)) => {
+                    if key.kind == KeyEventKind::Press {
+                        Some(Event::Key(key))
+                    }
+                    else {
+                        continue
+                    }
+                }
+                Some(other) => Some(other),
+                None => None,
             };
             let mut current_screen = std::mem::replace(&mut self.screen, screen(BlankScreen));
             let screen_action = current_screen.handle_event(self, event).await;

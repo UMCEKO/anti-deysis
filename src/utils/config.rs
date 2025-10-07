@@ -1,17 +1,23 @@
+use cookie_store::CookieStore;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Deserialize, Serialize)]
-pub struct Config {
+#[derive(Clone)]
+pub struct UserCredentials {
     pub email: String,
     pub password: String,
+    pub cookies: CookieStore
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct Config {
+    pub users: HashMap<String, UserCredentials>,
 }
 
 impl Default for Config {
     fn default() -> Self {
-        Self {
-            email: String::new(),
-            password: String::new(),
-        }
+        Self { users: HashMap::new() }
     }
 }
 
@@ -26,7 +32,7 @@ impl Config {
     }
 
     pub fn save_to_file(&self) {
-        if let Ok(contents) = serde_yml::to_string(self) {
+        if let Ok(contents) = serde_yml::to_string(&self) {
             let _ = std::fs::write("config.yml", contents);
         }
     }

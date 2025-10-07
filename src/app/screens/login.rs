@@ -3,18 +3,18 @@ use crate::app::screens::{Screen, ScreenAction};
 use crate::app::{screen, App};
 use crate::requests::get_user_details::get_user_details;
 use crate::requests::login::login;
-use crate::utils::save_cookies::save_cookies;
+use crate::utils::config::UserCredentials;
+use cookie_store::CookieStore;
 use crossterm::event::{Event, KeyCode};
 use ratatui::layout::{Alignment, Constraint, Direction, Layout};
 use ratatui::prelude::{Color, Modifier, Style};
 use ratatui::widgets::{Block, BorderType, Borders, Paragraph};
 use ratatui::Frame;
-use serde::{Deserialize, Serialize};
 
 pub struct LoginScreen {
     pub active_field: ActiveField,
-    error_message: Option<String>,
-    user_creds: UserCreds,
+    pub(crate) error_message: Option<String>,
+    pub user_creds: UserCredentials,
 }
 
 impl Default for LoginScreen {
@@ -22,9 +22,10 @@ impl Default for LoginScreen {
         Self {
             active_field: ActiveField::Email,
             error_message: None,
-            user_creds: UserCreds {
+            user_creds: UserCredentials {
                 email: String::new(),
                 password: String::new(),
+                cookies: CookieStore::new(),
             }
         }
     }
@@ -36,26 +37,13 @@ pub enum ActiveField {
     Password
 }
 
-#[derive(Serialize, Deserialize, Clone)]
-pub struct UserCreds {
-    pub email: String,
-    pub password: String,
-}
-
 #[async_trait::async_trait]
 impl Screen for LoginScreen {
     async fn handle_event(&mut self, app: &mut App, event: Option<Event>) -> ScreenAction {
-        {
-            let config = app.config.lock().unwrap();
-            if config.email.len() > 0 && config.password.len() > 0 && self.user_creds.email.len() == 0 && self.user_creds.password.len() == 0 {
-                self.user_creds.email = config.email.clone();
-                self.user_creds.password = config.password.clone();
-            }
-        }
         match event {
             Some(Event::Key(key)) => {
                 match key.code {
-                    KeyCode::Char('q') | KeyCode::Esc => {
+                    KeyCode::Esc => {
                         ScreenAction::ExitApp
                     }
                     KeyCode::Tab |
@@ -69,13 +57,11 @@ impl Screen for LoginScreen {
                     KeyCode::Enter => {
                         let http_client = app.http_client.clone();
                         let mut user_creds = self.user_creds.clone();
-                        let cookie_store = app.cookie_store.clone();
-                        let cookie_path = app.cookie_path.clone();
                         let config = app.config.clone();
+                        let cookie_store = app.cookie_store.clone();
                         ScreenAction::ChangeScreenAsync {
                             future: Box::pin(async move {
-                                let login_result = login(&http_client, user_creds.clone()).await.map_err(|e| e.to_string());
-                                save_cookies(cookie_store, cookie_path);
+                                let login_result = login(&http_client, user_creds.clone(), config.clone(), cookie_store).await.map_err(|e| e.to_string());
                                 let user_details = match login_result {
                                     Ok(_) => {
                                         let details_result = get_user_details(&http_client).await;
@@ -98,9 +84,20 @@ impl Screen for LoginScreen {
                                     Some(user_details) => {
                                         {
                                             let mut config = config.lock().unwrap();
-                                            config.email = user_creds.email.clone();
-                                            config.password = user_creds.password.clone();
-                                            config.save_to_file();
+                                            let user = config.users.get_mut(&user_creds.email);
+                                            match user {
+                                                Some(u) => {
+                                                    u.email = user_creds.email.clone();
+                                                    u.password = user_creds.password.clone();
+                                                }
+                                                None => {
+                                                    config.users.insert(user_creds.email.clone(), UserCredentials {
+                                                        email: user_creds.email.clone(),
+                                                        password: user_creds.password.clone(),
+                                                        cookies: user_creds.cookies.clone(),
+                                                    });
+                                                }
+                                            }
                                         }
                                         screen(HomeScreen {
                                             user_details,

@@ -14,7 +14,6 @@ use std::sync::{Arc, Mutex};
 
 pub struct App {
     screen: Box<dyn Screen>,
-    cookie_path: String,
     cookie_store: Arc<CookieStoreMutex>,
     terminal: Terminal<CrosstermBackend<Stdout>>,
     http_client: reqwest::Client,

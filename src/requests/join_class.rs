@@ -1,6 +1,6 @@
 use reqwest::Client;
-use std::error::Error;
 use serde_json::json;
+use std::error::Error;
 
 pub async fn join_class(client: &Client, code: String) -> Result<bool, Box<dyn Error>> {
     let lat: f64 = 38.366966;

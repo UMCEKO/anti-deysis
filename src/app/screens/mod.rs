@@ -6,6 +6,7 @@ pub mod login;
 pub mod loading;
 pub mod blank;
 pub mod home;
+pub mod account_selector;
 
 #[async_trait::async_trait]
 pub trait Screen: Send {
